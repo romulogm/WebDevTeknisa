@@ -150,4 +150,19 @@ function getUserInfo(id){
             return acc;
         }, {});
     }
+};
+
+function getTestContentByName(el, name, defaultValue = "") {
+    let element = el.querySelector(`*[name=${name}]`);
+    return element ? element.textContent : defaultValue;
 }
+
+userData.languages =
+Array.from(cardUser.querySelectorAll( ".languages > .iconLanguage ")).reduce(function (acc, el) {
+    let nameLanguage = el.name;
+    acc[nameLanguage] = `${el.getAttribute('experience')}`;
+    return acc; 
+}, {});
+userData.picture = cardUser.querySelector(".profilePicture > img").getAttribute('src');
+
+
