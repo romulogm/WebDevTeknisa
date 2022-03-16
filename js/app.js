@@ -15,12 +15,13 @@ function filter() {
     let {search, operation, languages} = getFilterProperties();
     let interval = setInterval((_) => {
         let[containerEl] = document.getElementsByClassName("container");
-        let changedText = search !== getSearchValue()
+        let changedText = search !== getSearchValue();
         if(!changedText) clearInterval(interval);
         if(containerEl && containerEl.children && !changedText) {
-            let visibleCards = updateVisibleCards(containerEl,search,operation, languages)
+            let visibleCards = updateVisibleCards(containerEl,search,operation, languages);
+            updateResults(visibleCards);
         }
-    }, 10000);
+    }, 800);
 }
 
 function getFilterProperties() {
@@ -48,6 +49,105 @@ function getSelectedLanguages(){
     return Array.from(document.querySelectorAll('header input[type="checkbox"]:checked'));
 }
 
-function updateVisibleCards(containerEl, search, operation, languages){
+function updateVisibleCards(containerEl, search, operation, selectedLanguages){
     let visibleCards = 0;
+    Array.from(containerEl.children).forEach((cardEl) => {
+        let [titleEl] = cardEl.getElementsByClassName("card-title");
+        let cardLanguages = Array.from(cardEl.getElementsByClassName("iconLanguage")).map((image) => image.name);
+        if(titleEl) {
+            let isMatchName = isMatchByName(titleEl.textContent, search);
+            if(!isMatchName && operation == "AND"){
+                hideCard(cardEl);
+            } else if(isMatchName && operation == "OR") {
+                showCard(cardEl);
+                visibleCards++;
+            } else if(isMatchName && operation == "AND"){
+                let isMatchLanguage = isMatchByLanguage(cardLanguages, selectedLanguages);
+                if(isMatchLanguage) {
+                    showCard(cardEl);
+                    visibleCards++;
+                } else{
+                    hideCard(cardEl);
+                }
+            } else if (!isMatchName && operation == "OR") {
+                let isMatchLanguage = isMatchByLanguage(cardLanguages, selectedLanguages);
+                if(isMatchLanguage){
+                    showCard(cardEl);
+                    visibleCards++;
+                } else {
+                    hideCard(cardEl);
+                }
+            }
+        }
+    });
+    return visibleCards;
+}
+
+function isMatchByName(textCard, textInput) {
+    return textCard.toLowerCase().includes(textInput.toLowerCase());
+}
+
+function isMatchByLanguage(cardLanguages, selectedLanguages){
+    return cardLanguages.some(cardLang => selectedLanguages.includes(cardLang));
+}
+
+function hideCard(card) {
+    card.style.display = "none";
+};
+
+function showCard(card) {
+    card.style.display = "flex";
+}
+
+const modalTemplate = `
+      <div class="modal">
+        <button class="fechar">x</button>
+        <div class="profilePictureModal">
+            <img class="image" name ="image-profile" src="__DEV_IMAGE__" alt="desenvolvedor" />
+        </div>
+        <div class="profileDescriptionModal">
+            <div style="display: flex; flex-direction: column">
+                <h2 class="card-title" name="devname">__DEV_NAME__</h2>
+                <span name="age">__DEV_AGE__</span>
+                <span name="description">__DEV_DESCRIPTION__</span>
+                <span name="description">__DEV_DESCRIPTION_ABILITY__</span>
+                <h3>Contato</h3>
+                <span name="mail">Email: <a href="#">__DEV_MAIL__</a></span>
+                <span name="git">Github: <a href="#">__DEV_GIT__</a></span>
+                <span name="phone">Telefone:__DEV_PHONE__</span>
+            </div>
+            <div class="languages">
+            <h3>Linguagens</h3>
+                __DEV_LANGUAGES__
+            </div>
+        </div>
+      </div>
+`;
+
+Array.from(document.querySelectorAll('.card')).forEach(card => {
+    card.addEventListener('click', () => iniciaModal('modal-profile', event.currentTarget.id));
+});
+
+function iniciaModal(modalId, cardId) {
+    fillModal(getUserInfo(cardId));
+    const modal = document.getElementById(modalId);
+    if(modal) {
+        modal.classList.add("mostrar");
+        modal.addEventListener("click", (e) => {
+            if(e.target.id == modalId || e.target.className == "fechar"){
+                modal.classList.remove("mostrar");
+            }
+        })
+    }
+}
+
+function getUserInfo(id){
+    let cardUser = document.getElementById(id);
+    let userData = {};
+    if(cardUser) {
+        userData = ['age', 'mail', 'phone', 'github', 'username', 'description', 'descriptionAbility'].reduce((acc,name) => {
+            acc[name] = getTextContentByName(cardUser,name);
+            return acc;
+        }, {});
+    }
 }
